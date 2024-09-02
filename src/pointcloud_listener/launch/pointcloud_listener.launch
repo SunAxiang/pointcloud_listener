@@ -1,0 +1,5 @@
+<launch>
+    <!-- 启动 pointcloud_listener 节点 -->
+    <node name="pointcloud_listener" pkg="pointcloud_listener" type="pointcloud_listener.py" output="screen" launch-prefix="python3">
+    </node>
+</launch>

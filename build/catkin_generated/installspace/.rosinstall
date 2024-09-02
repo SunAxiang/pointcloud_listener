@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/sax/catkin_ws-listener/install/setup.sh

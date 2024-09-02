@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import rospy
+import threading
+from sensor_msgs.msg import PointCloud
+
+
+class PointCloudListener:
+    def __init__(self):
+        self.count = 0
+        self.max_count = 2  # 只接收两次消息
+        self.file = open("output.txt", "w")  # 文件路径改为当前文件夹
+
+        self.sub = rospy.Subscriber(
+            "/radar_enhanced_pcl", PointCloud, self.callback)
+
+        # Set a timer to shut down the node after 30 seconds
+        self.timer = threading.Timer(30.0, self.timeout)
+        self.timer.start()
+
+    def callback(self, msg):
+        if self.count < self.max_count:
+            self.file.write(f"Message {self.count + 1}:\n")
+            self.file.write(
+                f"Header:\n  seq: {msg.header.seq}\n  stamp: {msg.header.stamp}\n  frame_id: {msg.header.frame_id}\n")
+
+            # Write points
+            self.file.write("Points:\n")
+            for point in msg.points:
+                self.file.write(
+                    f"  - x: {point.x}, y: {point.y}, z: {point.z}\n")
+
+            # Write channels
+            self.file.write("Channels:\n")
+            for channel in msg.channels:
+                self.file.write(f"  - name: {channel.name}\n")
+                self.file.write("    values:\n")
+                for value in channel.values:
+                    self.file.write(f"      - {value}\n")
+
+            self.file.write("\n")
+            self.count += 1
+
+            if self.count == self.max_count:
+                self.file.close()
+                self.timer.cancel()  # Cancel the timer if we've received enough messages
+                rospy.signal_shutdown("Collected 2 messages.")
+
+    def timeout(self):
+        rospy.loginfo("Timeout reached. Shutting down the node.")
+        if self.file:
+            self.file.close()
+        rospy.signal_shutdown("Timeout reached.")
+
+
+if __name__ == '__main__':
+    rospy.init_node('pointcloud_listener', anonymous=True)
+    listener = PointCloudListener()
+    rospy.spin()

@@ -1,0 +1,2 @@
+pointcloud_listener
+-DCATKIN_DEVEL_PREFIX=/home/sax/catkin_ws-listener/devel -DCMAKE_INSTALL_PREFIX=/home/sax/catkin_ws-listener/install -G Unix Makefiles
