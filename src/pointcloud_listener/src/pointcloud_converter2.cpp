@@ -1,8 +1,9 @@
+#include "custom_point_type_converter.h"
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/ChannelFloat32.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_cloud.h>
 #include <fstream>
 #include <iomanip>
 #include <sys/stat.h>
@@ -16,15 +17,15 @@ public:
     PointCloudConverter() : message_count_(0)
     {
         ros::NodeHandle nh;
-        sub_ = nh.subscribe("/ars548_process/point_cloud2", 10, &PointCloudConverter::callback, this);
+        sub_ = nh.subscribe("/ars548", 10, &PointCloudConverter::callback, this);
 
-        // 创建目录 "txt"
+        // Create a directory named "txt"
         if (mkdir("txt", 0777) && errno != EEXIST)
         {
             ROS_ERROR("Unable to create 'txt' directory");
         }
 
-        // 打开输出文件
+        // Open the output files for writing
         pointcloud2_file_.open("txt/converter_pointcloud2.txt");
         converted_file_.open("txt/converter_pointcloud.txt");
 
@@ -33,7 +34,7 @@ public:
             ROS_ERROR("Unable to open output files for writing");
         }
 
-        // 启动一个线程监视超时
+        // Start a separate thread to monitor the timeout
         monitor_thread_ = std::thread(&PointCloudConverter::monitorTimeout, this);
     }
 
@@ -59,14 +60,14 @@ public:
     {
         if (message_count_ < 3)
         {
-            // 保存原始 PointCloud2 数据到文件
+            // Save the raw PointCloud2 data to a txt file
             savePointCloud2ToFile(*msg, pointcloud2_file_);
 
-            // 将 PointCloud2 转换为 PointCloud
-            sensor_msgs::PointCloud cloud;
-            convertPointCloud2ToPointCloud(*msg, cloud);
+            // Convert PointCloud2 to custom PointCloud type
+            pcl::PointCloud<CustomPointType> cloud;
+            pcl::fromROSMsg(*msg, cloud);
 
-            // 保存转换后的 PointCloud 数据到文件
+            // Save the converted PointCloud data to a txt file
             savePointCloudToFile(cloud, converted_file_);
 
             ROS_INFO("Saved PointCloud2 data and converted PointCloud data");
@@ -74,7 +75,7 @@ public:
             message_count_++;
         }
 
-        // 如果接收到三个消息，则关闭节点
+        // If three messages have been received, shut down the node
         if (message_count_ >= 3)
         {
             ros::shutdown();
@@ -88,7 +89,7 @@ private:
     std::atomic<int> message_count_;
     std::thread monitor_thread_;
 
-    // 监视接收消息的超时时间
+    // Monitor the timeout for receiving messages
     void monitorTimeout()
     {
         ros::Duration timeout(5.0);
@@ -101,24 +102,26 @@ private:
         }
     }
 
-    // 保存 PointCloud2 数据到文件
+    // Save PointCloud2 data to a TXT file
+    // Save PointCloud2 data to a TXT file
     void savePointCloud2ToFile(const sensor_msgs::PointCloud2 &msg, std::ofstream &file)
     {
         if (file.is_open())
         {
+            // Write message number
             file << "Message " << message_count_ + 1 << ":\n";
 
-            // 写入头信息
+            // Write header information
             file << "Header:\n";
             file << "  seq: " << msg.header.seq << "\n";
             file << "  stamp: " << msg.header.stamp << "\n";
             file << "  frame_id: " << msg.header.frame_id << "\n";
 
-            // 写入 PointCloud2 的基本信息
+            // Write basic PointCloud2 information
             file << "Height: " << msg.height << "\n";
             file << "Width: " << msg.width << "\n";
 
-            // 写入字段信息
+            // Write field information
             file << "Fields:\n";
             for (const auto &field : msg.fields)
             {
@@ -133,13 +136,13 @@ private:
             file << "Row Step: " << msg.row_step << "\n";
             file << "Is Dense: " << (msg.is_dense ? "true" : "false") << "\n";
 
-            // 写入点云数据（十六进制表示）
+            // Write point cloud data (hexadecimal representation)
             file << "Data (hex):\n";
             for (const auto &byte : msg.data)
             {
                 file << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
             }
-            file << "\n\n";
+            file << "\n\n"; // Add a new line after each message
         }
         else
         {
@@ -147,94 +150,77 @@ private:
         }
     }
 
-    // 保存转换后的 PointCloud 数据到文件
-    void savePointCloudToFile(const sensor_msgs::PointCloud &cloud, std::ofstream &file)
+    // Save converted PointCloud data to a TXT file
+    // Save converted PointCloud data to a TXT file
+    // Save converted PointCloud data to a TXT file
+    void savePointCloudToFile(const pcl::PointCloud<CustomPointType> &cloud, std::ofstream &file)
     {
         if (file.is_open())
         {
+            // Write header information
             file << "Message " << message_count_ + 1 << ":\n";
             file << "Header:\n";
             file << "  seq: " << cloud.header.seq << "\n";
             file << "  stamp: " << cloud.header.stamp << "\n";
             file << "  frame_id: " << cloud.header.frame_id << "\n";
 
-            // 写入点信息
+            // Write points
             file << "Points:\n";
             for (const auto &point : cloud.points)
             {
                 file << "  - x: " << point.x << ", y: " << point.y << ", z: " << point.z << "\n";
             }
 
-            // 写入通道信息
+            // Write channels
             file << "Channels:\n";
-            for (const auto &channel : cloud.channels)
+
+            file << "  - name: Doppler\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
             {
-                file << "  - name: " << channel.name << "\n";
-                file << "    values:\n";
-                for (const auto &value : channel.values)
-                {
-                    file << "      - " << value << "\n";
-                }
+                file << "      - " << point.doppler << "\n";
             }
 
-            file << "\n";
+            file << "  - name: Intensity\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
+            {
+                file << "      - " << point.intensity << "\n";
+            }
+
+            file << "  - name: Range Std\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
+            {
+                file << "      - " << point.range_std << "\n";
+            }
+
+            file << "  - name: Azimuth Std\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
+            {
+                file << "      - " << point.azimuth_std << "\n";
+            }
+
+            file << "  - name: Elevation Std\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
+            {
+                file << "      - " << point.elevation_std << "\n";
+            }
+
+            file << "  - name: Doppler Std\n";
+            file << "    values:\n";
+            for (const auto &point : cloud.points)
+            {
+                file << "      - " << point.doppler_std << "\n";
+            }
+
+            file << "\n"; // Add a new line after each message
         }
         else
         {
             ROS_ERROR("Unable to write to converted PointCloud file");
-        }
-    }
-
-    // 将 PointCloud2 转换为 PointCloud，并解析非 xyz 字段到 channels 中
-    void convertPointCloud2ToPointCloud(const sensor_msgs::PointCloud2 &input, sensor_msgs::PointCloud &output)
-    {
-        output.header = input.header;
-
-        // 保留点和通道的空间
-        output.points.reserve(input.width * input.height);
-        std::vector<sensor_msgs::ChannelFloat32> channels(input.fields.size());
-
-        for (size_t i = 0; i < input.fields.size(); ++i)
-        {
-            const auto &field = input.fields[i];
-            if (field.name != "x" && field.name != "y" && field.name != "z")
-            {
-                channels[i].name = field.name;
-                channels[i].values.reserve(input.width * input.height);
-            }
-        }
-
-        for (size_t i = 0; i < input.width * input.height; ++i)
-        {
-            geometry_msgs::Point32 point;
-
-            // 提取 xyz 数据
-            memcpy(&point.x, &input.data[i * input.point_step + input.fields[0].offset], sizeof(float));
-            memcpy(&point.y, &input.data[i * input.point_step + input.fields[1].offset], sizeof(float));
-            memcpy(&point.z, &input.data[i * input.point_step + input.fields[2].offset], sizeof(float));
-
-            output.points.push_back(point);
-
-            // 提取非 xyz 数据
-            for (size_t j = 0; j < input.fields.size(); ++j)
-            {
-                const auto &field = input.fields[j];
-                if (field.name != "x" && field.name != "y" && field.name != "z")
-                {
-                    float value;
-                    memcpy(&value, &input.data[i * input.point_step + field.offset], sizeof(float));
-                    channels[j].values.push_back(value);
-                }
-            }
-        }
-
-        // 将通道添加到输出点云
-        for (const auto &channel : channels)
-        {
-            if (!channel.name.empty())
-            {
-                output.channels.push_back(channel);
-            }
         }
     }
 };
