@@ -16,7 +16,7 @@ public:
     PointCloudConverter() : message_count_(0)
     {
         ros::NodeHandle nh;
-        sub_ = nh.subscribe("/ars548_process/point_cloud2", 10, &PointCloudConverter::callback, this);
+        sub_ = nh.subscribe("/point_cloud_raw", 10, &PointCloudConverter::callback, this);
 
         // 创建目录 "txt"
         if (mkdir("txt", 0777) && errno != EEXIST)

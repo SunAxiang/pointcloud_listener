@@ -16,7 +16,7 @@ public:
     PointCloudHandler() : message_count_(0)
     {
         ros::NodeHandle nh;
-        sub_ = nh.subscribe("/ars548_process/point_cloud", 10, &PointCloudHandler::callback, this);
+        sub_ = nh.subscribe("/radar_enhanced_pcl", 10, &PointCloudHandler::callback, this);
 
         // Create a directory named "txt"
         struct stat info;
