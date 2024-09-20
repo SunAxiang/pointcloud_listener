@@ -9,21 +9,7 @@
 #include <sys/types.h>
 #include <thread>
 #include <atomic>
-#include "custom_point_type_converter.h" // 包含自定义点类型的头文件
-
-template <typename PointType>
-struct PointFieldInfo
-{
-    static std::vector<std::string> getFieldNames()
-    {
-        return {"doppler", "intensity", "range_std", "azimuth_std", "elevation_std", "doppler_std"};
-    }
-
-    static std::vector<float> getFieldValues(const PointType &point)
-    {
-        return {point.doppler, point.intensity, point.range_std, point.azimuth_std, point.elevation_std, point.doppler_std};
-    }
-};
+#include "custom_point_type_converter.h" // 包含自定义点云类型头文件
 
 class PointCloudConverter
 {
@@ -84,14 +70,11 @@ public:
             pcl::fromROSMsg(*msg, *cloud);
 
             // 保存转换后的自定义点云数据到文件
-            // saveCustomPointCloudToFile(cloud, converted_file_);
+            saveCustomPointCloudToFile(cloud, converted_file_);
 
             // 将自定义点云转换为 sensor_msgs::PointCloud
             sensor_msgs::PointCloud sensor_cloud;
             customPointCloudToSensorPointCloud(cloud, sensor_cloud);
-
-            // 保存转换后的自定义点云数据到文件
-            savePointCloudToFile(sensor_cloud, converted_file_);
 
             // 输出转换结果
             ROS_INFO("Converted custom point cloud to sensor_msgs::PointCloud");
@@ -201,9 +184,9 @@ private:
         // 设置 header
         sensor_cloud.header.stamp = ros::Time::now();
         sensor_cloud.header.frame_id = "custom_frame";
-        sensor_cloud.points.resize(custom_cloud->size());
 
-        // 拷贝 XYZ 坐标
+        // 将自定义点云的 x, y, z 拷贝到 sensor_msgs::PointCloud 中
+        sensor_cloud.points.resize(custom_cloud->size());
         for (size_t i = 0; i < custom_cloud->points.size(); ++i)
         {
             sensor_cloud.points[i].x = custom_cloud->points[i].x;
@@ -211,60 +194,23 @@ private:
             sensor_cloud.points[i].z = custom_cloud->points[i].z;
         }
 
-        // 自动检测字段并填充通道
-        auto field_names = PointFieldInfo<CustomPointConverterType>::getFieldNames();
+        // 创建并填充通道数据
+        sensor_msgs::ChannelFloat32 doppler_channel;
+        doppler_channel.name = "doppler";
+        sensor_msgs::ChannelFloat32 intensity_channel;
+        intensity_channel.name = "intensity";
 
-        for (const auto &field_name : field_names)
+        doppler_channel.values.resize(custom_cloud->size());
+        intensity_channel.values.resize(custom_cloud->size());
+
+        for (size_t i = 0; i < custom_cloud->points.size(); ++i)
         {
-            sensor_msgs::ChannelFloat32 channel;
-            channel.name = field_name;
-            channel.values.resize(custom_cloud->size());
-
-            for (size_t j = 0; j < custom_cloud->size(); ++j)
-            {
-                auto values = PointFieldInfo<CustomPointConverterType>::getFieldValues(custom_cloud->points[j]);
-                channel.values[j] = values[&field_name - &field_names[0]]; // 根据字段名称获取索引
-            }
-
-            sensor_cloud.channels.push_back(channel);
+            doppler_channel.values[i] = custom_cloud->points[i].doppler;
+            intensity_channel.values[i] = custom_cloud->points[i].intensity;
         }
-    }
-    // 保存转换后的 PointCloud 数据到文件
-    void savePointCloudToFile(const sensor_msgs::PointCloud &cloud, std::ofstream &file)
-    {
-        if (file.is_open())
-        {
-            file << "Message " << message_count_ + 1 << ":\n";
-            file << "Header:\n";
-            file << "  seq: " << cloud.header.seq << "\n";
-            file << "  stamp: " << cloud.header.stamp << "\n";
-            file << "  frame_id: " << cloud.header.frame_id << "\n";
 
-            // 写入点信息
-            file << "Points:\n";
-            for (const auto &point : cloud.points)
-            {
-                file << "  - x: " << point.x << ", y: " << point.y << ", z: " << point.z << "\n";
-            }
-
-            // 写入通道信息
-            file << "Channels:\n";
-            for (const auto &channel : cloud.channels)
-            {
-                file << "  - name: " << channel.name << "\n";
-                file << "    values:\n";
-                for (const auto &value : channel.values)
-                {
-                    file << "      - " << value << "\n";
-                }
-            }
-
-            file << "\n";
-        }
-        else
-        {
-            ROS_ERROR("Unable to write to converted PointCloud file");
-        }
+        sensor_cloud.channels.push_back(doppler_channel);
+        sensor_cloud.channels.push_back(intensity_channel);
     }
 };
 

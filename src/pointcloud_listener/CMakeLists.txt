@@ -40,9 +40,9 @@ target_link_libraries(pointcloud_converter ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(pointcloud_converter ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # # 构建pointcloud_converter2节点
-# add_executable(pointcloud_converter2 src/pointcloud_converter2.cpp)
-# target_link_libraries(pointcloud_converter2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-# add_dependencies(pointcloud_converter2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(pointcloud_converter2 src/pointcloud_converter2.cpp)
+target_link_libraries(pointcloud_converter2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(pointcloud_converter2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # 构建pointcloud_processor节点
 add_executable(pointcloud_processor src/pointcloud_processor.cpp)

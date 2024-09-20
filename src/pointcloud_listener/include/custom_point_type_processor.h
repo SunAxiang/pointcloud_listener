@@ -4,7 +4,7 @@
 #include <pcl/point_types.h>
 
 // Define a custom point type to match the fields in the PointCloud2 message
-struct CustomPointType
+struct EIGEN_ALIGN16 CustomPointProcessorType
 {
     PCL_ADD_POINT4D; // Preferred way of adding a XYZ+padding
     float doppler;
@@ -17,7 +17,7 @@ struct CustomPointType
 } EIGEN_ALIGN16;                    // Force SSE alignment
 
 // Register the point type with PCL
-POINT_CLOUD_REGISTER_POINT_STRUCT(CustomPointType,
+POINT_CLOUD_REGISTER_POINT_STRUCT(CustomPointProcessorType,
                                   (float, x, x)(float, y, y)(float, z, z)(float, doppler, Doppler)(float, range, Range)(float, power, Power)(float, alpha, Alpha)(float, beta, Beta))
 
 #endif // CUSTOM_POINT_TYPE_CONVERTER_H

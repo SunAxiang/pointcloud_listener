@@ -4,6 +4,7 @@
 pointcloud_listener/CMakeFiles/pointcloud_converter2.dir/src/pointcloud_converter2.cpp.o
  /home/sax/catkin_ws-listener/src/pointcloud_listener/include/custom_point_type_converter.h
  /home/sax/catkin_ws-listener/src/pointcloud_listener/src/pointcloud_converter2.cpp
+ /opt/ros/noetic/include/geometry_msgs/Point32.h
  /opt/ros/noetic/include/pcl_conversions/pcl_conversions.h
  /opt/ros/noetic/include/pcl_msgs/ModelCoefficients.h
  /opt/ros/noetic/include/pcl_msgs/PointIndices.h
@@ -65,7 +66,9 @@ pointcloud_listener/CMakeFiles/pointcloud_converter2.dir/src/pointcloud_converte
  /opt/ros/noetic/include/ros/wall_timer.h
  /opt/ros/noetic/include/ros/wall_timer_options.h
  /opt/ros/noetic/include/rosconsole/macros_generated.h
+ /opt/ros/noetic/include/sensor_msgs/ChannelFloat32.h
  /opt/ros/noetic/include/sensor_msgs/Image.h
+ /opt/ros/noetic/include/sensor_msgs/PointCloud.h
  /opt/ros/noetic/include/sensor_msgs/PointCloud2.h
  /opt/ros/noetic/include/sensor_msgs/PointField.h
  /opt/ros/noetic/include/std_msgs/Header.h

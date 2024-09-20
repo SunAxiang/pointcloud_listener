@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <thread>
 #include <atomic>
-#include "custom_point_type_converter.h"
+#include "custom_point_type_processor.h"
 
 class PointCloudHandler
 {

@@ -64,6 +64,9 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "fstream": "cpp",
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "deque": "cpp",
+    "string": "cpp",
+    "vector": "cpp"
   }
 }
