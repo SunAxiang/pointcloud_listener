@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/point_cloud_conversion.h> // 用于转换函数
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -9,12 +8,14 @@
 #include <iomanip>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <thread>
 #include <atomic>
+#include "custom_point_type_processor.h"
 
 class PointCloudHandler
 {
 public:
-    PointCloudHandler() : message_count_(0)
+    PointCloudHandler() : message_count_(0), shutdown_requested_(false)
     {
         ros::NodeHandle nh;
         sub_ = nh.subscribe("/radar_enhanced_pcl", 10, &PointCloudHandler::callback, this);
@@ -34,12 +35,19 @@ public:
             ROS_ERROR("Failed to open output files.");
         }
 
-        // 启动超时监控定时器
-        timer_ = nh.createTimer(ros::Duration(5.0), &PointCloudHandler::timeoutCallback, this);
+        // 启动监控线程
+        monitor_thread_ = std::thread(&PointCloudHandler::monitorTimeout, this);
     }
 
     ~PointCloudHandler()
     {
+        shutdown_requested_ = true; // 设置标志以停止监控线程
+
+        if (monitor_thread_.joinable())
+        {
+            monitor_thread_.join();
+        }
+
         if (pointcloud_file_.is_open())
         {
             pointcloud_file_.close();
@@ -55,7 +63,7 @@ public:
     {
         if (message_count_ < 3)
         {
-            // 使用 ROS 提供的转换函数
+            // 手动转换 PointCloud 到 PointCloud2
             sensor_msgs::PointCloud2 pcl_cloud2;
             convertPointCloudToPointCloud2(*msg, pcl_cloud2);
 
@@ -82,11 +90,15 @@ private:
     std::ofstream pointcloud_file_;
     std::ofstream pointcloud2_file_;
     std::atomic<int> message_count_;
-    ros::Timer timer_; // 定时器代替线程
+    std::thread monitor_thread_;
+    std::atomic<bool> shutdown_requested_;
 
-    // 定时器超时回调函数
-    void timeoutCallback(const ros::TimerEvent &)
+    // 监控超时函数
+    void monitorTimeout()
     {
+        ros::Duration timeout(5.0);
+        timeout.sleep();
+
         if (message_count_ < 3)
         {
             ROS_WARN("Timeout reached before receiving three messages. Shutting down.");
@@ -111,8 +123,10 @@ private:
     // 将 PointCloud 手动转换为 PointCloud2
     void convertPointCloudToPointCloud2(const sensor_msgs::PointCloud &input, sensor_msgs::PointCloud2 &output)
     {
-        // 使用 ROS 提供的转换函数
-        sensor_msgs::convertPointCloudToPointCloud2(input, output);
+        // 这里需要手动填充 PointCloud2 的字段
+        pcl::PCLPointCloud2 pcl_cloud2;
+        pcl_conversions::moveToPCL(input, pcl_cloud2);
+        pcl_conversions::fromPCL(pcl_cloud2, output);
     }
 
     // 保存 PointCloud 数据到文件

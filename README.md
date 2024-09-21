@@ -20,28 +20,29 @@ rosrun pointcloud_listener pointcloud_listener.py
 
 roslaunch pointcloud_listener pointcloud_listener.launch
 
-_---_
 
-_pointcloud_converter.cpp：不使用自定义数据类型；除了 `x`, `y`, `z` 坐标外，其他字段会被存储在 `PointCloud` 的通道中（`channels`）。_
+_pointcloud_converter.cpp：手动转换；除了 `x`, `y`, `z` 坐标外，其他字段fields会被存储在 `PointCloud` 的通道中（`channels`）。_
 
 sensor_msgs::PointCloud2 => sensor_msgs::PointCloud
 
-pointcloud_converter2.cpp 使用:自定义的点云数据类型（custom_point_types.h）；使用 pcl::fromROSMsg(\*msg, cloud)进行转换。
+pointcloud_converter2.cpp 使用:sensor_msgs::convertPointCloud2ToPointCloud函数
 
-sensor_msgs::PointCloud2=>pcl::PointCloud `<CustomPointConverterType>` => sensor_msgs::PointCloud
-
----
-
-_pointcloud_processor.cpp：不使用自定义数据类型；_
-
-_sensor_msgs::PointCloud=>pcl::PointCloud=>pcl::PointCloud2=>sensor_msgs::PointCloud2_
-
-_pointcloud_processor2.cpp:使用自定义的点云数据类型（custom_point_types.h）；使用 xxx 进行转换（还没有完成）。_
+sensor_msgs::PointCloud2 => sensor_msgs::PointCloud
 
 ---
 
-sensor_msgs/PointCloud2  => snail-radar => 20231208 => data4.bag => /ars548
+_pointcloud_processor.cpp：手动转换；除了 `x`, `y`, `z` 坐标外，其他 `通道channels`会被存储在 `PointCloud`2 的字段fields中。_
 
-sensor_msgs/PointCloud  => xxx =>  xxx => xxx => xxx
+_sensor_msgs::PointCloud => sensor_msgs::PointCloud2_
+
+_pointcloud_processor2.cpp:使用sensor_msgs::convertPointCloudToPointCloud2函数_
+
+_sensor_msgs::PointCloud => sensor_msgs::PointCloud2_
+
+---
+
+pointcloud_converter  => snail-radar => 20231208 => data4.bag => /ars548
+
+pointcloud_processor  => xxx =>  xxx => xxx => xxx
 
 ---
